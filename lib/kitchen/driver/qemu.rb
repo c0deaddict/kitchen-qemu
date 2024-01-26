@@ -103,6 +103,7 @@ module Kitchen
           config[:image] = [{
             :file     => config[:image],
             :snapshot => 'on',
+            :if       => 'none',
           }]
         else
           raise UserError, "Invalid image entry for #{instance.to_str}" unless
@@ -223,7 +224,8 @@ module Kitchen
 
         cmd.push('-device', 'virtio-scsi-pci,id=scsi')
         config[:image].each_with_index do |image, i|
-          drive = ['if=none', "id=drive#{i}"]
+          drive = ["id=drive#{i}"]
+          drive.push("if=#{image[:if]}")                       if image.has_key?(:if)
           drive.push("readonly=#{image[:readonly]}")           if image.has_key?(:readonly)
           drive.push("snapshot=#{image[:snapshot]}")           if image.has_key?(:snapshot)
           drive.push("discard=#{image[:discard]}")             if image.has_key?(:discard)
