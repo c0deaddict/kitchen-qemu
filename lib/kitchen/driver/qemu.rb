@@ -103,7 +103,6 @@ module Kitchen
           config[:image] = [{
             :file     => config[:image],
             :snapshot => 'on',
-            :if       => 'none',
           }]
         else
           raise UserError, "Invalid image entry for #{instance.to_str}" unless
@@ -180,9 +179,9 @@ module Kitchen
         cmd = [
           config[:binary], '-daemonize',
           '-display', config[:display].to_s,
-          '-chardev', "socket,id=mon-qmp,path=#{monitor},server,nowait",
+          '-chardev', "socket,id=mon-qmp,path=#{monitor},server=on,wait=off",
           '-mon', 'chardev=mon-qmp,mode=control',
-          '-serial', "mon:unix:path=#{serial_path},server,nowait",
+          '-serial', "mon:unix:path=#{serial_path},server=on,wait=off",
           '-m', config[:memory].to_s,
         ]
 
@@ -222,10 +221,8 @@ module Kitchen
         cmd.push('-spice', config[:spice].to_s) if config[:spice]
         cmd.push('-vnc',   config[:vnc].to_s)   if config[:vnc]
 
-        cmd.push('-device', 'virtio-scsi-pci,id=scsi')
         config[:image].each_with_index do |image, i|
-          drive = ["id=drive#{i}"]
-          drive.push("if=#{image[:if]}")                       if image.has_key?(:if)
+          drive = ["if=virtio"]
           drive.push("readonly=#{image[:readonly]}")           if image.has_key?(:readonly)
           drive.push("snapshot=#{image[:snapshot]}")           if image.has_key?(:snapshot)
           drive.push("discard=#{image[:discard]}")             if image.has_key?(:discard)
@@ -235,8 +232,7 @@ module Kitchen
           else
             drive.push("file=#{config[:image_path]}/#{image[:file]}")
           end
-          cmd.push('-device', "scsi-hd,drive=drive#{i}",
-                   '-drive', drive.join(','))
+          cmd.push('-drive', drive.join(','))
         end
 
         smp = []
